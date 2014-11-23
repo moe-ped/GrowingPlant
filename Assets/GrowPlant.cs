@@ -7,8 +7,15 @@ public class GrowPlant : MonoBehaviour {
 
 	public float angleRandomness = 10;
 
+	public int generationsToControl = 8;
+
+	public int maximumBranches = 8;
+	public float branchingChance = 0.2f;
+
 	public ArrayList sprouts = new ArrayList();
 	public ArrayList leafSprouts = new ArrayList();
+	public ArrayList controlledBranches = new ArrayList();
+
 
 	public GameObject branch;
 	public GameObject leaf;
@@ -17,7 +24,9 @@ public class GrowPlant : MonoBehaviour {
 	void Start () {
 		GameObject newBranch = (GameObject)Instantiate (branch, transform.position, Quaternion.identity);
 		newBranch.transform.parent = transform;
+		controlledBranches.Add(newBranch);
 		doSprouting(newBranch);
+		generationsToControl -= 1;
 	}
 	
 	// Update is called once per frame
@@ -31,9 +40,17 @@ public class GrowPlant : MonoBehaviour {
 	}
 
 	GameObject doSprouting (GameObject sprout) {
+		// just to make sure ...
+		sprouts.Remove(sprout.transform.parent.gameObject);
+
+		Debug.Log(sprouts.Count);
 		GameObject newBranch = (GameObject)Instantiate (branch, sprout.transform.position, Quaternion.identity);
 		newBranch.transform.parent = sprout.transform;
-		newBranch.transform.position += sprout.transform.up * sprout.GetComponent<SpriteRenderer>().bounds.size.y;
+		SpriteRenderer sproutSpriteRenderer = sprout.GetComponent<SpriteRenderer>();
+		SpriteRenderer spriteRenderer = newBranch.GetComponent<SpriteRenderer>();
+		newBranch.transform.position = sproutSpriteRenderer.bounds.center;
+		newBranch.transform.position += sprout.transform.up * (sproutSpriteRenderer.bounds.extents.y);
+		spriteRenderer.sortingOrder = sproutSpriteRenderer.sortingOrder - 1;
 		newBranch.transform.localScale = Vector3.zero;
 		// rotate by random angle
 		newBranch.transform.Rotate(0, 0, ((Random.value-0.5f)*2)*angleRandomness);
@@ -47,15 +64,27 @@ public class GrowPlant : MonoBehaviour {
 			sprout.transform.localScale += Vector3.one * growSpeed * Time.deltaTime;
 		}
 		if (sprout.transform.localScale.y > 1) {
+			sprouts.Remove(sprout);
 			sprout.transform.localScale = Vector3.one;
 			//randomly sprout/ branch
-			if (Random.value < 0.8f || sprouts.Count > 8) {
+			if (Random.value < 1-branchingChance || sprouts.Count > maximumBranches) {
 				doSprouting(sprout);
+				if (generationsToControl > 0) {
+					generationsToControl -= 1;
+				}
+				else {
+					selectNextGen ();
+				}
 			}
 			else {
 				doBranching(sprout);
+				if (generationsToControl > 0) {
+					generationsToControl -= 1;
+				}
+				else {
+					selectNextGen ();
+				}
 			}
-			sprouts.Remove(sprout);
 		}
 	}
 
@@ -88,16 +117,27 @@ public class GrowPlant : MonoBehaviour {
 		}
 	}
 
-	//whaaa!
-	/*static public void destroyBranch (GameObject leaf) {
-		foreach (Transform child in leaf.transform.parent.GetComponentsInChildren<Transform>()) {
-			if (child.name.Contains("branch")) {
-				this.sprouts.Remove(child);
-			}
-			if (child.name.Contains("leaf")) {
-				this.leafSprouts.Remove(child);
+	// update controlledBranches 
+	void selectNextGen () {
+		foreach (GameObject currentGen in controlledBranches) {
+			controlledBranches.Remove(currentGen);
+			foreach (Transform child in currentGen.transform) {
+				controlledBranches.Add(child.gameObject);
 			}
 		}
-		Destroy (leaf.parent.gameObject);
-	}*/
+	}
+
+
+	public void destroyBranch (GameObject leaf) {
+		foreach (Transform child in leaf.transform.parent.GetComponentsInChildren<Transform>()) {
+			if (child.name.Contains("branch")) {
+				sprouts.Remove(child.gameObject);
+				controlledBranches.Remove(child.gameObject);
+			}
+			if (child.name.Contains("leaf")) {
+				leafSprouts.Remove(child.gameObject);
+			}
+		}
+		Destroy (leaf.transform.parent.gameObject);
+	}
 }

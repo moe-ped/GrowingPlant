@@ -5,6 +5,8 @@ public class MovePlant : MonoBehaviour {
 
 	public float sensitivity = 1;
 
+	public GrowPlant growPlant;
+
 	// Use this for initialization
 	void Start () {
 	
@@ -17,10 +19,13 @@ public class MovePlant : MonoBehaviour {
 	}
 
 	void moveTree (Vector3 direction) {
-		foreach (Transform branch in GetComponentsInChildren<Transform>()) {
-			//Debug.Log(branch.gameObject.name);
-			float step = 0.1f * Time.deltaTime;
-			branch.transform.up = Vector3.RotateTowards(branch.transform.up, direction, step, 0.0f); 
+		foreach (GameObject controlledBranch in growPlant.controlledBranches) {
+			//Debug.DrawLine(controlledBranch.transform.position, controlledBranch.transform.position + Vector3.right, Color.red);
+			foreach (Transform branch in controlledBranch.GetComponentsInChildren<Transform>()) {
+				//Debug.Log(branch.gameObject.name);
+				float step = 0.1f * sensitivity * Time.deltaTime;
+				branch.transform.up = Vector3.RotateTowards(branch.transform.up, direction, step, 0.0f); 
+			}
 		}
 	}
 }

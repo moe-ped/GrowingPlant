@@ -45,7 +45,7 @@ public class Follow : MonoBehaviour {
 
 			hoehe = sprout.transform.position.y;
 
-			Debug.Log("Höhe " + hoehe  );
+			//Debug.Log("Höhe " + hoehe  );
 		}
 
 
